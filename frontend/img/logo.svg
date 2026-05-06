@@ -1,0 +1,14 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+  </defs>
+  <!-- Stylized MM Monogram -->
+  <path d="M10 45V15L25 35L40 15V45" stroke="url(#logo-gradient)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M25 45V25L40 40L55 25V45" stroke="url(#logo-gradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  
+  <!-- Media Mind Text -->
+  <text x="65" y="40" font-family="Outfit, sans-serif" font-size="24" font-weight="700" fill="white">MediaMind</text>
+</svg>

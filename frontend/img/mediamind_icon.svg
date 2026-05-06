@@ -1,0 +1,33 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#714DFF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#9C83FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E151FF;stop-opacity:1" />
+    </linearGradient>
+    <filter id="iconGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Stylized Brain/M Symbol -->
+  <g transform="translate(10, 10)">
+    <!-- Main brain shape -->
+    <path d="M15 2 C15 0, 18 -2, 21 0 C24 -2, 27 0, 27 2 C30 2, 30 6, 28 9 C30 12, 28 16, 25 16 C25 20, 22 23, 19 21 C16 23, 13 20, 13 16 C10 16, 8 12, 10 9 C8 6, 8 2, 11 2 Z" 
+          fill="url(#iconGradient)" 
+          filter="url(#iconGlow)"/>
+    
+    <!-- Neural connections -->
+    <line x1="15" y1="8" x2="23" y2="8" stroke="#FFF" stroke-width="1.5" opacity="0.7"/>
+    <line x1="16" y1="13" x2="22" y2="13" stroke="#FFF" stroke-width="1.5" opacity="0.7"/>
+    
+    <!-- Nodes -->
+    <circle cx="15" cy="8" r="2" fill="#FFF"/>
+    <circle cx="23" cy="8" r="2" fill="#FFF"/>
+    <circle cx="19" cy="15" r="2" fill="#FFF"/>
+  </g>
+</svg>

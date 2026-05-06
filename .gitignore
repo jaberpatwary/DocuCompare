@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+*.exe
+*.dll
+*.so
+*.dylib
+main
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backups
+*.backup
+*_backup.*
+frontend/index_backup.html
+frontend/index_portfolio_ait.html
+
+# Downloaded/generated files
+ait_portfolio.html
+customize_html.go
+download_assets.py

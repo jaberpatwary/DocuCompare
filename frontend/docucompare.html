@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuCompare - MediaMind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased transition-colors duration-300">
+    <!-- Top Navbar -->
+    <header class="bg-[#1E1B4B] text-white flex justify-between items-center px-6 py-4 shadow-md transition-colors duration-300">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-500 p-2 rounded-lg">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">DocuCompare</h1>
+                <p class="text-xs text-indigo-200">Image/PDF vs DOCX Checker</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button class="flex items-center space-x-2 bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-700 rounded-lg px-4 py-2 text-sm transition">
+                <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                <span>বাংলা (Bangla)</span>
+            </button>
+            <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-indigo-800 transition">
+                <svg id="theme-icon" class="w-5 h-5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+            <button onclick="scrollToHistory()" class="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg px-4 py-2 text-sm font-medium transition shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Compare History</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-6 right-6 z-50 hidden items-center space-x-3 px-5 py-3 rounded-xl shadow-xl text-sm font-medium transition-all duration-300">
+        <span id="toast-icon"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-6">
+        <!-- Upload Section -->
+        <section class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 transition-colors duration-300">
+            
+            <!-- Step 1: First Document -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-bold text-sm">1</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800 dark:text-slate-100">Upload First Document</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Image or PDF file</p>
+                    </div>
+                </div>
+                <input type="file" id="file1-input" class="hidden" accept=".pdf,image/*">
+                <div id="dropzone1" class="border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-xl bg-indigo-50/50 dark:bg-slate-700/30 flex flex-col items-center justify-center py-10 px-4 text-center hover:bg-indigo-50 dark:hover:bg-slate-700/50 transition cursor-pointer" onclick="document.getElementById('file1-input').click()">
+                    <svg class="w-10 h-10 text-indigo-500 dark:text-indigo-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">Drag & drop image or PDF here</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">or</p>
+                    <button class="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition pointer-events-none">Choose File</button>
+                </div>
+                <!-- File 1 Details -->
+                <div id="file1-details" class="hidden items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div id="file1-type" class="bg-red-100 dark:bg-red-900/30 p-1.5 rounded text-red-600 dark:text-red-400 text-xs font-bold uppercase">PDF</div>
+                        <div class="overflow-hidden">
+                            <p id="file1-name" class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate w-40">document.pdf</p>
+                            <p id="file1-size" class="text-xs text-slate-500 dark:text-slate-400">0 MB</p>
+                        </div>
+                    </div>
+                    <svg class="w-6 h-6 text-emerald-500 dark:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Step 2: Second Document -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold text-sm">2</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800 dark:text-slate-100">Upload Second Document</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">DOCX or PDF file</p>
+                    </div>
+                </div>
+                <input type="file" id="file2-input" class="hidden" accept=".pdf,.docx">
+                <div id="dropzone2" class="border-2 border-dashed border-blue-200 dark:border-blue-800/50 rounded-xl bg-blue-50/50 dark:bg-slate-700/30 flex flex-col items-center justify-center py-10 px-4 text-center hover:bg-blue-50 dark:hover:bg-slate-700/50 transition cursor-pointer" onclick="document.getElementById('file2-input').click()">
+                    <svg class="w-10 h-10 text-blue-500 dark:text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">Drag & drop DOCX or PDF here</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">or</p>
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition pointer-events-none">Choose File</button>
+                </div>
+                <!-- File 2 Details -->
+                <div id="file2-details" class="hidden items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div id="file2-type" class="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded text-blue-600 dark:text-blue-400 text-xs font-bold uppercase">DOCX</div>
+                        <div class="overflow-hidden">
+                            <p id="file2-name" class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate w-40">document.docx</p>
+                            <p id="file2-size" class="text-xs text-slate-500 dark:text-slate-400">0 MB</p>
+                        </div>
+                    </div>
+                    <svg class="w-6 h-6 text-emerald-500 dark:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Step 3: Compare Settings -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 font-bold text-sm">3</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800 dark:text-slate-100">Compare Documents</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Click compare to find differences</p>
+                    </div>
+                </div>
+                
+                <div class="pt-2 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Compare Language</label>
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            <select id="language" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 appearance-none bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors">
+                                <option value="bn">বাংলা (Bangla)</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="compare-btn" onclick="submitCompare()" class="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-medium py-3 rounded-lg flex items-center justify-center space-x-2 shadow-md transition disabled:opacity-50">
+                        <svg id="compare-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <svg id="compare-loader" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span id="compare-text">Compare Now</span>
+                    </button>
+                    
+                    <div class="flex items-start space-x-2 text-xs text-slate-500 dark:text-slate-400 mt-4">
+                        <svg class="h-4 w-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p>Your files are secure and never stored permanently.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Wrapper (Hidden initially) -->
+        <div id="results-wrapper" class="hidden space-y-6 animate-[fadeIn_0.5s_ease-out]">
+            
+            <!-- Statistics Bar -->
+            <section class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 transition-colors duration-300">
+                <div class="flex items-center space-x-6 pr-6 lg:border-r border-slate-200 dark:border-slate-700">
+                    <div class="relative h-24 w-24 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" class="text-slate-200 dark:text-slate-700" stroke-width="3" />
+                            <path id="overall-similarity-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" stroke-width="3" stroke-dasharray="92, 100" />
+                        </svg>
+                        <div id="overall-similarity" class="absolute text-2xl font-bold text-slate-800 dark:text-slate-100">92%</div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-1">Overall Similarity</h3>
+                        <span class="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-2 py-1 rounded">Excellent Match</span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Documents are highly similar</p>
+                    </div>
+                </div>
+
+                <div class="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-red-50/50 dark:bg-slate-700/50 p-4 rounded-xl border border-red-100 dark:border-slate-600 flex items-center space-x-4">
+                        <div class="bg-red-100 dark:bg-red-900/30 p-2 rounded-full text-red-500 dark:text-red-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <p id="mismatched-count" class="text-xl font-bold text-slate-800 dark:text-slate-100">23</p>
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-300">Mismatched Words</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500">Found differences</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-amber-50/50 dark:bg-slate-700/50 p-4 rounded-xl border border-amber-100 dark:border-slate-600 flex items-center space-x-4">
+                        <div class="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full text-amber-500 dark:text-amber-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                        </div>
+                        <div>
+                            <p id="missing-count" class="text-xl font-bold text-slate-800 dark:text-slate-100">7</p>
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-300">Missing Words</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500">Not in first document</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 dark:bg-slate-700/50 p-4 rounded-xl border border-blue-100 dark:border-slate-600 flex items-center space-x-4">
+                        <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full text-blue-500 dark:text-blue-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </div>
+                        <div>
+                            <p id="extra-count" class="text-xl font-bold text-slate-800 dark:text-slate-100">5</p>
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-300">Extra Words</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500">Not in second document</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50/50 dark:bg-slate-700/50 p-4 rounded-xl border border-purple-100 dark:border-slate-600 flex items-center space-x-4">
+                        <div class="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full text-purple-500 dark:text-purple-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <p id="total-count" class="text-xl font-bold text-slate-800 dark:text-slate-100">1,248</p>
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-300">Total Words Compared</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Side-by-side View -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full p-2 shadow-sm z-10 hidden md:block">
+                    <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800 rounded-t-xl">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            <h3 class="font-semibold text-slate-700 dark:text-slate-200 text-sm">First Document (Image/PDF)</h3>
+                        </div>
+                        <span class="text-xs text-slate-400">1,256 words</span>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 text-slate-700 dark:text-slate-300 leading-loose text-[15px] font-sans" id="doc1-content">
+                        বাংলাদেশ একটি <span class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded border border-red-200 dark:border-red-800">সুন্দর</span> দেশ। এই দেশের মানুষেরা খুব পরিশ্রমী ও <span class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded border border-red-200 dark:border-red-800">মেহনতি</span>। বাংলাদেশে অনেক প্রাকৃতিক <span class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded border border-red-200 dark:border-red-800">সৌন্দর্য</span> রয়েছে। পদ্মা, মেঘনা, যমুনা এই দেশের প্রধান নদী। আমাদের দেশকে আমরা ভালোবাসি এবং এর <span class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded border border-red-200 dark:border-red-800">উন্নতির</span> জন্য কাজ করি।
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800 rounded-t-xl">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <h3 class="font-semibold text-slate-700 dark:text-slate-200 text-sm">Second Document (DOCX/PDF)</h3>
+                        </div>
+                        <span class="text-xs text-slate-400">1,261 words</span>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 text-slate-700 dark:text-slate-300 leading-loose text-[15px] font-sans" id="doc2-content">
+                        বাংলাদেশ একটি <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-1 rounded border border-emerald-200 dark:border-emerald-800">সুন্দর</span> দেশ। এই দেশের মানুষেরা খুব পরিশ্রমী ও <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-1 rounded border border-emerald-200 dark:border-emerald-800">মেহনতি</span>। বাংলাদেশে অনেক প্রাকৃতিক <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-1 rounded border border-emerald-200 dark:border-emerald-800">সৌন্দর্য</span> রয়েছে। পদ্মা, মেঘনা, যমুনা এই দেশের প্রধান নদী। আমাদের দেশকে আমরা ভালোবাসি এবং এর <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-1 rounded border border-emerald-200 dark:border-emerald-800">উন্নতির</span> জন্য কাজ করি।
+                    </div>
+                </div>
+            </section>
+
+            <!-- Differences Table and Export -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2 mb-4">
+                        <span class="text-amber-500">⚠️</span>
+                        <span>Differences Found (<span id="diff-found-count">23</span>)</span>
+                    </h3>
+                    
+                    <div id="diff-table-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2">
+                            <div class="flex items-center space-x-3 w-full justify-center">
+                                <span class="text-red-600 dark:text-red-400 font-medium line-through">সুন্দর</span>
+                                <span class="text-slate-400">→</span>
+                                <span class="text-emerald-600 dark:text-emerald-400 font-medium">সুন্দর</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider">Spelling</span>
+                        </div>
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2">
+                            <div class="flex items-center space-x-3 w-full justify-center">
+                                <span class="text-red-600 dark:text-red-400 font-medium line-through">মেহনতি</span>
+                                <span class="text-slate-400">→</span>
+                                <span class="text-emerald-600 dark:text-emerald-400 font-medium">মেহনতি</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider">Spelling</span>
+                        </div>
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2">
+                            <div class="flex items-center space-x-3 w-full justify-center">
+                                <span class="text-red-600 dark:text-red-400 font-medium line-through">সৌন্দর্য</span>
+                                <span class="text-slate-400">→</span>
+                                <span class="text-emerald-600 dark:text-emerald-400 font-medium">সৌন্দর্য</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider">Spelling</span>
+                        </div>
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2">
+                            <div class="flex items-center space-x-3 w-full justify-center">
+                                <span class="text-red-600 dark:text-red-400 font-medium line-through">উন্নতির</span>
+                                <span class="text-slate-400">→</span>
+                                <span class="text-emerald-600 dark:text-emerald-400 font-medium">উন্নতির</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider">Spelling</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800/30 p-6 flex flex-col justify-center">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <h3 class="font-semibold text-slate-800 dark:text-slate-200">Export Report</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Download comparison report</p>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.print()" class="flex items-center justify-center space-x-2 border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 py-2.5 rounded-lg text-sm font-medium transition bg-white dark:bg-slate-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            <span>PDF Report</span>
+                        </button>
+                        <button onclick="downloadWordReport()" class="flex items-center justify-center space-x-2 border border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 py-2.5 rounded-lg text-sm font-medium transition bg-white dark:bg-slate-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <span>Word Report</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- History Section -->
+    <div id="history-section" class="max-w-7xl mx-auto px-6 pb-10 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Compare History</span>
+            </h2>
+            <div id="history-list" class="space-y-3">
+                <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-6">No comparison history yet. Run a comparison to see results here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Actions -->
+    <script>
+        // Toast notification
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+            toast.classList.remove('hidden', 'bg-red-500', 'bg-emerald-500', 'bg-indigo-500');
+            toast.classList.add('flex');
+            if (type === 'error') {
+                toast.classList.add('bg-red-500');
+                toastIcon.innerHTML = '❌';
+                toast.style.color = 'white';
+            } else if (type === 'success') {
+                toast.classList.add('bg-emerald-500');
+                toastIcon.innerHTML = '✅';
+                toast.style.color = 'white';
+            } else {
+                toast.classList.add('bg-indigo-500');
+                toastIcon.innerHTML = 'ℹ️';
+                toast.style.color = 'white';
+            }
+            toastMsg.innerText = msg;
+            setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3500);
+        }
+
+        // Scroll to history
+        function scrollToHistory() {
+            const section = document.getElementById('history-section');
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Download Word Report as plain text
+        function downloadWordReport() {
+            const doc1 = document.getElementById('doc1-content');
+            const doc2 = document.getElementById('doc2-content');
+            if (!doc1 || !doc1.innerText.trim()) {
+                showToast('No comparison result to export yet!', 'error');
+                return;
+            }
+            const content = 'DocuCompare Report\n==================\n\nFirst Document:\n' + doc1.innerText + '\n\nSecond Document:\n' + doc2.innerText;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'docucompare-report.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Report downloaded!', 'success');
+        }
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+            } else {
+                html.classList.add('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+            }
+        }
+
+        // File Selection Handlers
+        function handleFileSelection(inputId, detailsId, dropzoneId, nameId, sizeId, typeId) {
+            const input = document.getElementById(inputId);
+            const details = document.getElementById(detailsId);
+            const dropzone = document.getElementById(dropzoneId);
+            
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) showFileDetails(file, details, dropzone, nameId, sizeId, typeId);
+            });
+
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-indigo-500'); });
+            dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('border-indigo-500'); });
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('border-indigo-500');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    input.files = e.dataTransfer.files; 
+                    showFileDetails(file, details, dropzone, nameId, sizeId, typeId);
+                }
+            });
+        }
+
+        function showFileDetails(file, detailsElem, dropzoneElem, nameId, sizeId, typeId) {
+            dropzoneElem.style.display = 'none';
+            detailsElem.classList.remove('hidden');
+            detailsElem.classList.add('flex');
+            document.getElementById(nameId).innerText = file.name;
+            document.getElementById(sizeId).innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            let ext = file.name.split('.').pop().toUpperCase();
+            if (['JPEG','JPG','PNG'].includes(ext)) ext = 'IMG';
+            document.getElementById(typeId).innerText = ext;
+        }
+
+        handleFileSelection('file1-input', 'file1-details', 'dropzone1', 'file1-name', 'file1-size', 'file1-type');
+        handleFileSelection('file2-input', 'file2-details', 'dropzone2', 'file2-name', 'file2-size', 'file2-type');
+
+        // Form Submit Real Implementation
+        async function submitCompare() {
+            const file1 = document.getElementById('file1-input').files[0];
+            const file2 = document.getElementById('file2-input').files[0];
+            const lang = document.getElementById('language').value;
+
+            if (!file1 || !file2) {
+                showToast('Please select both documents first!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('compare-btn');
+            const icon = document.getElementById('compare-icon');
+            const loader = document.getElementById('compare-loader');
+            const text = document.getElementById('compare-text');
+            const resultsWrapper = document.getElementById('results-wrapper');
+            
+            btn.disabled = true;
+            icon.classList.add('hidden');
+            loader.classList.remove('hidden');
+            text.innerText = "Extracting & Comparing...";
+            resultsWrapper.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('file1', file1);
+            formData.append('file2', file2);
+            formData.append('language', lang);
+
+            try {
+                const response = await fetch('/api/v1/compare/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || "Comparison failed");
+                }
+
+                // Update UI with real data
+                document.getElementById('overall-similarity').innerText = Math.round(data.similarity_score) + '%';
+                document.getElementById('overall-similarity-circle').setAttribute('stroke-dasharray', Math.round(data.similarity_score) + ', 100');
+                
+                document.getElementById('mismatched-count').innerText = data.mismatched_words;
+                document.getElementById('missing-count').innerText = data.missing_words;
+                document.getElementById('extra-count').innerText = data.extra_words;
+                document.getElementById('total-count').innerText = data.total_words_compared;
+                
+                document.getElementById('diff-found-count').innerText = data.mismatched_words + data.missing_words + data.extra_words;
+
+                // Render diff text
+                const diffArray = JSON.parse(data.compare_result);
+                let doc1HTML = '';
+                let doc2HTML = '';
+                let diffTableHTML = '';
+
+                diffArray.forEach(d => {
+                    if (d.type === 'equal') {
+                        doc1HTML += d.text + ' ';
+                        doc2HTML += d.text + ' ';
+                    } else if (d.type === 'delete') {
+                        doc1HTML += `<span class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded border border-red-200 dark:border-red-800">${d.text}</span> `;
+                        diffTableHTML += `<div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2 relative"><div class="flex items-center space-x-3 w-full justify-center"><span class="text-red-600 dark:text-red-400 font-medium line-through">${d.text}</span><span class="text-slate-400">→</span><span class="text-emerald-600 dark:text-emerald-400 font-medium">Missing</span></div><span class="text-[10px] text-slate-400 uppercase tracking-wider">Removed</span></div>`;
+                    } else if (d.type === 'insert') {
+                        doc2HTML += `<span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-1 rounded border border-emerald-200 dark:border-emerald-800">${d.text}</span> `;
+                        diffTableHTML += `<div class="border border-slate-200 dark:border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center space-y-2 relative"><div class="flex items-center space-x-3 w-full justify-center"><span class="text-red-600 dark:text-red-400 font-medium line-through">None</span><span class="text-slate-400">→</span><span class="text-emerald-600 dark:text-emerald-400 font-medium">${d.text}</span></div><span class="text-[10px] text-slate-400 uppercase tracking-wider">Added</span></div>`;
+                    }
+                });
+
+                document.getElementById('doc1-content').innerHTML = doc1HTML;
+                document.getElementById('doc2-content').innerHTML = doc2HTML;
+                
+                if (diffTableHTML !== '') {
+                    document.getElementById('diff-table-container').innerHTML = diffTableHTML;
+                } else {
+                    document.getElementById('diff-table-container').innerHTML = '<p class="text-sm text-slate-500 col-span-4 text-center py-4">No differences found!</p>';
+                }
+
+                // Show Results
+                resultsWrapper.classList.remove('hidden');
+                resultsWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Add to history list
+                const historyList = document.getElementById('history-list');
+                const f1Name = document.getElementById('file1-name').innerText;
+                const f2Name = document.getElementById('file2-name').innerText;
+                const now = new Date().toLocaleString();
+                const score = Math.round(data.similarity_score);
+                const historyItem = `<div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg">
+                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-700 dark:text-slate-200">${f1Name} vs ${f2Name}</p>
+                            <p class="text-xs text-slate-400 dark:text-slate-500">${now}</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold ${score >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}">${score}% Match</span>
+                </div>`;
+                const p = historyList.querySelector('p');
+                if (p) p.remove();
+                historyList.insertAdjacentHTML('afterbegin', historyItem);
+
+                showToast('Comparison complete!', 'success');
+
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('hidden');
+                loader.classList.add('hidden');
+                text.innerText = "Compare Now";
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>
