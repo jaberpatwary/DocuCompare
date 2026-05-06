@@ -59,27 +59,8 @@ func (s *documentService) ExtractTextFromDocx(path string) (string, error) {
 
 	// Extract text
 	docxObj := r.Editable()
-	rawXML := docxObj.GetContent()
+	text := docxObj.GetContent()
 
-	// Parse plain text out of the raw XML using a simple regex to match <w:t>...</w:t>
-	// or we can strip all XML tags. A robust way is removing all <...> tags.
-	var buf bytes.Buffer
-	inTag := false
-	for _, char := range rawXML {
-		if char == '<' {
-			inTag = true
-			continue
-		}
-		if char == '>' {
-			inTag = false
-			continue
-		}
-		if !inTag {
-			buf.WriteRune(char)
-		}
-	}
-
-	text := strings.TrimSpace(buf.String())
 	return text, nil
 }
 
