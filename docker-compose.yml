@@ -1,58 +1,38 @@
 version: '3.8'
 
 services:
-  adminer:
-    image: adminer
-    restart: always
+  app:
+    build: .
+    container_name: docucompare
     ports:
-      - 8080:8080
-    networks:
-      - go-network
+      - "1111:1111"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - PORT=1111
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - db
+    restart: unless-stopped
+    volumes:
+      - upload_data:/app/frontend/uploads
 
-  postgresdb:
-    image: postgres:alpine
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      timeout: 20s
-      retries: 10
-    ports:
-      - ${DB_PORT}:5432
+  db:
+    image: postgres:16-alpine
+    container_name: docucompare_db
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-      - ./src/database/init:/docker-entrypoint-initdb.d
-    networks:
-      - go-network
-
-  go-app:
-    build: .
-    image: go-app
     ports:
-      - ${APP_PORT}:3000
-    depends_on:
-      postgresdb:
-        condition: service_healthy
+      - "5433:5432"
     volumes:
-      - .:/usr/src/go-app
-    restart: on-failure
-    env_file:
-      - .env
-    networks:
-      - go-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "${APP_URL}/v1/health-check"]
-      interval: 40s
-      timeout: 30s
-      retries: 3
-      start_period: 30s
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
 volumes:
-  dbdata:
-
-networks:
-  go-network:
-    driver: bridge
+  pg_data:
+  upload_data:

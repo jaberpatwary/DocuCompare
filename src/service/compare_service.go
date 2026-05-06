@@ -2,9 +2,11 @@ package service
 
 import (
 	"app/src/model"
+	"app/src/utils"
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -24,19 +26,21 @@ type CompareService interface {
 }
 
 type compareService struct {
-	db  *gorm.DB
-	ocr OCRService
+	db       *gorm.DB
+	ocr      OCRService
+	document DocumentService
 }
 
-func NewCompareService(db *gorm.DB, ocr OCRService) CompareService {
+func NewCompareService(db *gorm.DB, ocr OCRService, document DocumentService) CompareService {
 	return &compareService{
-		db:  db,
-		ocr: ocr,
+		db:       db,
+		ocr:      ocr,
+		document: document,
 	}
 }
 
-// Helper to save uploaded file
-func saveFile(file *multipart.FileHeader, dest string) error {
+// saveUploadedFile copies a multipart file to the destination path
+func saveUploadedFile(file *multipart.FileHeader, dest string) error {
 	src, err := file.Open()
 	if err != nil {
 		return err
@@ -53,29 +57,91 @@ func saveFile(file *multipart.FileHeader, dest string) error {
 	return err
 }
 
-// Helper to check if file is an image
-func isImage(filename string) bool {
+// isImageFile checks if the filename has an image extension
+func isImageFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
 	return ext == ".jpg" || ext == ".jpeg" || ext == ".png"
 }
 
-// Helper to extract text from generic files (fallback for now, e.g., PDF/DOCX)
-func extractTextFromFile(filePath string) (string, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
+// isPDFFile checks if the filename is a PDF
+func isPDFFile(filename string) bool {
+	return strings.ToLower(filepath.Ext(filename)) == ".pdf"
+}
+
+// isDocxFile checks if the filename is a DOCX
+func isDocxFile(filename string) bool {
+	return strings.ToLower(filepath.Ext(filename)) == ".docx"
+}
+
+// extractTextByType routes to the correct extraction method based on file type
+func (s *compareService) extractTextByType(filePath string, filename string, lang string) (string, error) {
+	switch {
+	case isImageFile(filename):
+		utils.Log.Infof("Running OCR on image: %s", filename)
+		text, err := s.ocr.ExtractTextFromImage(filePath, lang)
+		if err != nil {
+			return "", fmt.Errorf("OCR failed for %s: %w", filename, err)
+		}
+		return text, nil
+
+	case isPDFFile(filename):
+		utils.Log.Infof("Extracting text from PDF: %s", filename)
+		text, err := s.document.ExtractTextFromPDF(filePath)
+		if err != nil {
+			return "", fmt.Errorf("PDF extraction failed for %s: %w", filename, err)
+		}
+		return text, nil
+
+	case isDocxFile(filename):
+		utils.Log.Infof("Extracting text from DOCX: %s", filename)
+		text, err := s.document.ExtractTextFromDocx(filePath)
+		if err != nil {
+			return "", fmt.Errorf("DOCX extraction failed for %s: %w", filename, err)
+		}
+		return text, nil
+
+	default:
+		return "", fmt.Errorf("unsupported file type: %s", filepath.Ext(filename))
 	}
-	// For actual PDFs/DOCX, this needs specific extractors.
-	// For now, if it contains binary nulls, we return a fallback to avoid gibberish breaking the UI.
-	text := string(content)
-	if strings.Contains(text, "\x00") {
-		return "This is a fallback text for non-image binary files. Real PDF/DOCX extraction required.", nil
+}
+
+// cosineSimilarity computes similarity between two word frequency maps
+func cosineSimilarity(words1, words2 []string) float64 {
+	freq1 := make(map[string]float64)
+	freq2 := make(map[string]float64)
+
+	for _, w := range words1 {
+		freq1[w]++
 	}
-	return text, nil
+	for _, w := range words2 {
+		freq2[w]++
+	}
+
+	// Dot product
+	var dot float64
+	for word, count := range freq1 {
+		dot += count * freq2[word]
+	}
+
+	// Magnitudes
+	mag1, mag2 := 0.0, 0.0
+	for _, count := range freq1 {
+		mag1 += count * count
+	}
+	for _, count := range freq2 {
+		mag2 += count * count
+	}
+
+	if mag1 == 0 || mag2 == 0 {
+		return 0
+	}
+
+	return dot / (math.Sqrt(mag1) * math.Sqrt(mag2))
 }
 
 func (s *compareService) CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, error) {
-	// Parse multipart form
+	startTime := time.Now()
+
 	file1, err := c.FormFile("file1")
 	if err != nil {
 		return nil, fmt.Errorf("file1 is required")
@@ -86,101 +152,100 @@ func (s *compareService) CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, 
 	}
 	language := c.FormValue("language", "bn")
 
-	uploadDir := "./frontend/uploads/"
-	os.MkdirAll(uploadDir, os.ModePerm)
+	// Day-wise organized upload directory
+	today := time.Now().Format("2006-01-02")
+	uploadDir := filepath.Join("./frontend/uploads", today)
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create upload directory: %w", err)
+	}
 
+	// Secure filenames: timestamp + original name
 	path1 := filepath.Join(uploadDir, fmt.Sprintf("%d_%s", time.Now().UnixNano(), file1.Filename))
 	path2 := filepath.Join(uploadDir, fmt.Sprintf("%d_%s", time.Now().UnixNano(), file2.Filename))
 
-	if err := saveFile(file1, path1); err != nil {
+	if err := saveUploadedFile(file1, path1); err != nil {
+		return nil, fmt.Errorf("failed to save file1: %w", err)
+	}
+	defer os.Remove(path1) // Cleanup after processing
+
+	if err := saveUploadedFile(file2, path2); err != nil {
+		return nil, fmt.Errorf("failed to save file2: %w", err)
+	}
+	defer os.Remove(path2)
+
+	// Extract text from both documents using real extraction
+	text1, err := s.extractTextByType(path1, file1.Filename, language)
+	if err != nil {
+		utils.Log.Errorf("Extraction failed for file1: %v", err)
 		return nil, err
 	}
-	if err := saveFile(file2, path2); err != nil {
+
+	text2, err := s.extractTextByType(path2, file2.Filename, language)
+	if err != nil {
+		utils.Log.Errorf("Extraction failed for file2: %v", err)
 		return nil, err
 	}
 
-	// Process Document 1
-	var text1 string
-	if isImage(file1.Filename) {
-		text1, _ = s.ocr.ExtractTextFromImage(path1, language)
-	} else {
-		text1, _ = extractTextFromFile(path1)
+	// Normalize both texts (Bengali-friendly)
+	text1 = utils.NormalizeText(text1)
+	text2 = utils.NormalizeText(text2)
+
+	if strings.TrimSpace(text1) == "" || strings.TrimSpace(text2) == "" {
+		return nil, fmt.Errorf("one or both documents produced no extractable text. Check file quality or format")
 	}
 
-	// Process Document 2
-	var text2 string
-	if isImage(file2.Filename) {
-		text2, _ = s.ocr.ExtractTextFromImage(path2, language)
-	} else {
-		text2, _ = extractTextFromFile(path2)
-	}
-
-	// If OCR failed or returned empty (e.g. Tesseract not installed on dev machine), provide a fallback message
-	if text1 == "" {
-		text1 = "OCR extraction returned empty text for document 1."
-	}
-	if text2 == "" {
-		text2 = "OCR extraction returned empty text for document 2."
-	}
-
-	// Compute Diff
+	// Word-level diff using diffmatchpatch
 	dmp := diffmatchpatch.New()
-	
-	// Convert text to words for word-level diff
 	words1 := strings.Fields(text1)
 	words2 := strings.Fields(text2)
-	
-	// Rejoin with special delimiter to use diffmatchpatch line mode hack for words
+
 	text1Lines := strings.Join(words1, "\n")
 	text2Lines := strings.Join(words2, "\n")
-	
+
 	diffs := dmp.DiffMain(text1Lines, text2Lines, false)
 	diffs = dmp.DiffCleanupSemantic(diffs)
 
-	var mismatched, missing, extra int
+	var missing, extra int
 	var resultJSON bytes.Buffer
 	resultJSON.WriteString("[")
+	first := true
 
-	totalWords := len(words1)
-	if len(words2) > totalWords {
-		totalWords = len(words2)
-	}
-
-	for i, d := range diffs {
+	for _, d := range diffs {
 		wordStr := strings.ReplaceAll(strings.ReplaceAll(d.Text, "\n", " "), `"`, `\"`)
 		wordStr = strings.TrimSpace(wordStr)
 		if wordStr == "" {
 			continue
 		}
-
-		if i > 0 {
+		if !first {
 			resultJSON.WriteString(",")
 		}
+		first = false
 
-		if d.Type == diffmatchpatch.DiffEqual {
+		switch d.Type {
+		case diffmatchpatch.DiffEqual:
 			resultJSON.WriteString(fmt.Sprintf(`{"type":"equal","text":"%s"}`, wordStr))
-		} else if d.Type == diffmatchpatch.DiffInsert {
+		case diffmatchpatch.DiffInsert:
 			extra += len(strings.Fields(d.Text))
 			resultJSON.WriteString(fmt.Sprintf(`{"type":"insert","text":"%s"}`, wordStr))
-		} else if d.Type == diffmatchpatch.DiffDelete {
+		case diffmatchpatch.DiffDelete:
 			missing += len(strings.Fields(d.Text))
 			resultJSON.WriteString(fmt.Sprintf(`{"type":"delete","text":"%s"}`, wordStr))
 		}
 	}
 	resultJSON.WriteString("]")
 
-	// Approximate Mismatched (simplification: if delete is followed by insert, it's a mismatch)
-	mismatched = min(missing, extra)
-	missing = missing - mismatched
-	extra = extra - mismatched
+	mismatched := min(missing, extra)
+	missing -= mismatched
+	extra -= mismatched
 
-	similarity := 100.0
-	if totalWords > 0 {
-		similarity = float64(totalWords-mismatched-missing-extra) / float64(totalWords) * 100.0
+	totalWords := len(words1)
+	if len(words2) > totalWords {
+		totalWords = len(words2)
 	}
-	if similarity < 0 {
-		similarity = 0
-	}
+
+	// Cosine similarity for more accurate percentage
+	cosineSim := cosineSimilarity(words1, words2) * 100.0
+	processingMs := int(time.Since(startTime).Milliseconds())
 
 	history := &model.CompareHistory{
 		FirstDocumentName:  file1.Filename,
@@ -190,18 +255,25 @@ func (s *compareService) CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, 
 		SecondDocumentURL:  path2,
 		SecondDocumentText: text2,
 		Language:           language,
-		SimilarityScore:    similarity,
+		SimilarityScore:    math.Round(cosineSim*100) / 100,
 		MismatchedWords:    mismatched,
 		MissingWords:       missing,
 		ExtraWords:         extra,
 		TotalWordsCompared: totalWords,
 		CompareResult:      resultJSON.String(),
+		ProcessingTimeMs:   processingMs,
+		FileSize1:          file1.Size,
+		FileSize2:          file2.Size,
+		FileType1:          strings.ToLower(filepath.Ext(file1.Filename)),
+		FileType2:          strings.ToLower(filepath.Ext(file2.Filename)),
 		Status:             "completed",
 	}
 
-	// Save to DB
-	s.db.Create(history)
+	if err := s.db.Create(history).Error; err != nil {
+		utils.Log.Errorf("Failed to save comparison history: %v", err)
+	}
 
+	utils.Log.Infof("Comparison complete: %.2f%% similarity, %dms processing", cosineSim, processingMs)
 	return history, nil
 }
 
@@ -214,7 +286,20 @@ func min(a, b int) int {
 
 func (s *compareService) GetHistory(c *fiber.Ctx) ([]model.CompareHistory, error) {
 	var history []model.CompareHistory
-	if err := s.db.Find(&history).Error; err != nil {
+	query := s.db.Order("created_at desc")
+
+	// Filter by date if provided
+	if date := c.Query("date"); date != "" {
+		query = query.Where("DATE(created_at) = ?", date)
+	}
+	// Filter by language
+	if lang := c.Query("language"); lang != "" {
+		query = query.Where("language = ?", lang)
+	}
+	// Limit
+	query = query.Limit(100)
+
+	if err := query.Find(&history).Error; err != nil {
 		return nil, err
 	}
 	return history, nil

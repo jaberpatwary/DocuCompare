@@ -20,6 +20,10 @@ type CompareHistory struct {
 	TotalWordsCompared int       `gorm:"default:0" json:"total_words_compared"`
 	CompareResult      string    `gorm:"type:jsonb" json:"compare_result"`
 	ProcessingTimeMs   int       `gorm:"default:0" json:"processing_time_ms"`
+	FileSize1          int64     `json:"file_size1"`
+	FileSize2          int64     `json:"file_size2"`
+	FileType1          string    `json:"file_type1"`
+	FileType2          string    `json:"file_type2"`
 	Status             string    `gorm:"type:varchar(20);default:'pending'" json:"status"`
 	ErrorMessage       string    `gorm:"type:text" json:"error_message"`
 	UserID             int       `gorm:"index" json:"user_id"`

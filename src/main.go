@@ -5,6 +5,7 @@ import (
 	"app/src/database"
 	"app/src/middleware"
 	"app/src/router"
+	"app/src/service"
 	"app/src/utils"
 	"context"
 	"fmt"
@@ -37,6 +38,9 @@ func main() {
 	db := setupDatabase()
 	defer closeDatabase(db)
 	setupRoutes(app, db)
+
+	// Start background file cleanup (removes files older than 7 days)
+	service.StartCleanupScheduler(7)
 
 	address := fmt.Sprintf("%s:%d", config.AppHost, config.AppPort)
 

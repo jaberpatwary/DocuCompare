@@ -1,18 +1,31 @@
-FROM golang:1.22 AS build
+# Build stage
+FROM golang:1.25-alpine AS builder
+
+RUN apk add --no-cache gcc musl-dev tesseract-ocr-dev leptonica-dev
 
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
-RUN go clean --modcache
-RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build src/main.go
+RUN CGO_ENABLED=1 go build -o /app/server ./src/main.go
 
-FROM alpine:latest
+# Production stage
+FROM alpine:3.20
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache \
+    tesseract-ocr \
+    tesseract-ocr-data-eng \
+    tesseract-ocr-data-ben \
+    ca-certificates
 
-WORKDIR /root
-COPY --from=build /app/main .
-COPY --from=build /app/.env .
+WORKDIR /app
+COPY --from=builder /app/server .
+COPY --from=builder /app/frontend ./frontend
+COPY --from=builder /app/.env .
 
-EXPOSE 3000
-CMD ["./main"]
+RUN mkdir -p /app/frontend/uploads
+
+EXPOSE 1111
+
+CMD ["./server"]

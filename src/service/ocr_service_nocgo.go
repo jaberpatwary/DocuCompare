@@ -10,12 +10,17 @@ import (
 
 type OCRService interface {
 	ExtractTextFromImage(filePath string, lang string) (string, error)
+	PreprocessImage(filePath string) (string, error)
 }
 
 type ocrService struct{}
 
 func NewOCRService() OCRService {
 	return &ocrService{}
+}
+
+func (s *ocrService) PreprocessImage(filePath string) (string, error) {
+	return filePath, nil
 }
 
 func (s *ocrService) ExtractTextFromImage(filePath string, lang string) (string, error) {
