@@ -24,12 +24,14 @@ type CompareService interface {
 }
 
 type compareService struct {
-	db *gorm.DB
+	db  *gorm.DB
+	ocr OCRService
 }
 
-func NewCompareService(db *gorm.DB) CompareService {
+func NewCompareService(db *gorm.DB, ocr OCRService) CompareService {
 	return &compareService{
-		db: db,
+		db:  db,
+		ocr: ocr,
 	}
 }
 
@@ -51,19 +53,25 @@ func saveFile(file *multipart.FileHeader, dest string) error {
 	return err
 }
 
-// Helper to extract text - Mocking advanced OCR/PDF for immediate functionality
-// It reads plain text or basic file content for now
-func extractText(filePath string) (string, error) {
-	// For immediate real-time comparison, we will read the file as bytes
-	// In production, this is where gosseract (OCR) or PDF extractors go
+// Helper to check if file is an image
+func isImage(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	return ext == ".jpg" || ext == ".jpeg" || ext == ".png"
+}
+
+// Helper to extract text from generic files (fallback for now, e.g., PDF/DOCX)
+func extractTextFromFile(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
-	// Basic fallback: just return the content as string (assuming it's readable)
-	// For actual PDFs/DOCX, it will return gibberish unless parsed,
-	// but this proves the end-to-end engine works.
-	return string(content), nil
+	// For actual PDFs/DOCX, this needs specific extractors.
+	// For now, if it contains binary nulls, we return a fallback to avoid gibberish breaking the UI.
+	text := string(content)
+	if strings.Contains(text, "\x00") {
+		return "This is a fallback text for non-image binary files. Real PDF/DOCX extraction required.", nil
+	}
+	return text, nil
 }
 
 func (s *compareService) CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, error) {
@@ -91,17 +99,28 @@ func (s *compareService) CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, 
 		return nil, err
 	}
 
-	// Read content (basic)
-	text1, _ := extractText(path1)
-	text2, _ := extractText(path2)
-
-	// In case files are binary and unreadable directly, fallback to some mock string 
-	// just so the frontend gets real structural data instead of failing on binary parse
-	if strings.Contains(text1, "\x00") {
-		text1 = "This is document 1. Bangladesh is a beautiful country. People are hardworking."
+	// Process Document 1
+	var text1 string
+	if isImage(file1.Filename) {
+		text1, _ = s.ocr.ExtractTextFromImage(path1, language)
+	} else {
+		text1, _ = extractTextFromFile(path1)
 	}
-	if strings.Contains(text2, "\x00") {
-		text2 = "This is document 2. Bangladesh is a very beautiful country. People are lazy."
+
+	// Process Document 2
+	var text2 string
+	if isImage(file2.Filename) {
+		text2, _ = s.ocr.ExtractTextFromImage(path2, language)
+	} else {
+		text2, _ = extractTextFromFile(path2)
+	}
+
+	// If OCR failed or returned empty (e.g. Tesseract not installed on dev machine), provide a fallback message
+	if text1 == "" {
+		text1 = "OCR extraction returned empty text for document 1."
+	}
+	if text2 == "" {
+		text2 = "OCR extraction returned empty text for document 2."
 	}
 
 	// Compute Diff

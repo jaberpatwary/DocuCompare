@@ -8,8 +8,9 @@ import (
 )
 
 func CompareRoutes(app *fiber.App, db *gorm.DB) {
-	// Initialize the Service
-	compareService := service.NewCompareService(db)
+	// Initialize Services
+	ocrService := service.NewOCRService()
+	compareService := service.NewCompareService(db, ocrService)
 	
 	// Initialize the Controller
 	compareController := controller.NewCompareController(compareService)
