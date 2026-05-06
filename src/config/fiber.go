@@ -16,5 +16,6 @@ func FiberConfig() fiber.Config {
 		ErrorHandler:  utils.ErrorHandler,
 		JSONEncoder:   sonic.Marshal,
 		JSONDecoder:   sonic.Unmarshal,
+		BodyLimit:     50 * 1024 * 1024, // 50MB
 	}
 }
