@@ -14,11 +14,9 @@ func CompareRoutes(app *fiber.App, db *gorm.DB) {
 	ocrService := service.NewOCRService()
 	documentService := service.NewDocumentService(ocrService)
 	compareService := service.NewCompareService(db, ocrService, documentService)
-	analyticsService := service.NewAdminAnalyticsService(db)
 
 	// Initialize Controllers
 	compareController := controller.NewCompareController(compareService)
-	adminController := controller.NewAdminController(analyticsService)
 
 	// Compare API Group (with file validation middleware)
 	api := app.Group("/api/v1/compare")
@@ -26,13 +24,8 @@ func CompareRoutes(app *fiber.App, db *gorm.DB) {
 		return c.JSON(fiber.Map{"message": "Compare API is working", "status": "ok"})
 	})
 	api.Post("/process", middleware.FileValidation(), compareController.Compare)
+	api.Post("/extract", middleware.FileValidation(), compareController.Extract)
 	api.Get("/history", compareController.GetHistory)
 	api.Get("/history/:id", compareController.GetHistoryByID)
 	api.Delete("/history/:id", compareController.DeleteHistory)
-
-	// Admin Analytics API Group (protected with JWT)
-	admin := app.Group("/api/v1/admin")
-	admin.Get("/stats", adminController.GetDashboardStats)
-	admin.Get("/daily-uploads", adminController.GetDailyUploads)
-	admin.Get("/recent-activity", adminController.GetRecentActivity)
 }

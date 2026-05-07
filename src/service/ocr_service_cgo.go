@@ -5,7 +5,6 @@ package service
 
 import (
 	"fmt"
-	"image"
 	"os"
 	"strings"
 
@@ -70,7 +69,7 @@ func (s *ocrService) ExtractTextFromImage(filePath string, lang string) (string,
 		client.SetLanguage("eng")
 	}
 
-	err := client.SetImage(filePath)
+	err = client.SetImage(filePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to set image for OCR: %w", err)
 	}

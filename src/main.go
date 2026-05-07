@@ -53,8 +53,6 @@ func main() {
 func setupFiberApp() *fiber.App {
 	app := fiber.New(config.FiberConfig())
 
-	router.FrontendRoutes(app)
-
 	// Middleware setup
 	app.Use("/v1/auth", middleware.LimiterConfig())
 	app.Use(middleware.LoggerConfig())
@@ -62,6 +60,8 @@ func setupFiberApp() *fiber.App {
 	app.Use(compress.New())
 	app.Use(cors.New())
 	app.Use(middleware.RecoverConfig())
+	// Static serving
+	app.Static("/", "./frontend")
 
 	return app
 }

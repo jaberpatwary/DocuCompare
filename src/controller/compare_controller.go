@@ -64,3 +64,16 @@ func (cc *CompareController) DeleteHistory(c *fiber.Ctx) error {
 		Message: "History deleted successfully",
 	})
 }
+
+// Extract Single Document Endpoint
+func (cc *CompareController) Extract(c *fiber.Ctx) error {
+	text, err := cc._CompareService.ExtractDocument(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"text": text,
+	})
+}

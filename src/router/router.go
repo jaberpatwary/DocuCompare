@@ -17,11 +17,6 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	UserRoutes(v1, UserService)
 	UserRoutes(api, UserService)
 
-    
-    // Register Portfolio Routes
-    PortfolioRoutes(app, db)
-	NavRoutes(app, db)
-	ProjectRoutes(app, db)
 	CompareRoutes(app, db)
 	
 	// Health check endpoint

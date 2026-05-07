@@ -20,6 +20,7 @@ import (
 
 type CompareService interface {
 	CompareDocuments(c *fiber.Ctx) (*model.CompareHistory, error)
+	ExtractDocument(c *fiber.Ctx) (string, error)
 	GetHistory(c *fiber.Ctx) ([]model.CompareHistory, error)
 	GetHistoryByID(c *fiber.Ctx, id string) (*model.CompareHistory, error)
 	DeleteHistory(c *fiber.Ctx, id string) error
@@ -315,4 +316,29 @@ func (s *compareService) GetHistoryByID(c *fiber.Ctx, id string) (*model.Compare
 
 func (s *compareService) DeleteHistory(c *fiber.Ctx, id string) error {
 	return s.db.Delete(&model.CompareHistory{}, id).Error
+}
+
+func (s *compareService) ExtractDocument(c *fiber.Ctx) (string, error) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return "", fmt.Errorf("file is required")
+	}
+	language := c.FormValue("language", "bn")
+
+	today := time.Now().Format("2006-01-02")
+	uploadDir := filepath.Join("./frontend/uploads", today)
+	os.MkdirAll(uploadDir, os.ModePerm)
+
+	path := filepath.Join(uploadDir, fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename))
+	if err := saveUploadedFile(file, path); err != nil {
+		return "", err
+	}
+	defer os.Remove(path)
+
+	text, err := s.extractTextByType(path, file.Filename, language)
+	if err != nil {
+		return "", err
+	}
+
+	return text, nil
 }
