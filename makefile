@@ -2,12 +2,8 @@
 # export $(shell sed 's/=.*//' .env) # Linux specific, causing errors on Windows
 
 start:
-ifeq ($(OS),Windows_NT)
-	powershell -ExecutionPolicy Bypass -File .\start.ps1
-else
 	@fuser -k 1111/tcp 2>/dev/null || true
-	@go run src/main.go
-endif
+	@CGO_ENABLED=0 go run src/main.go
 lint:
 	@golangci-lint run
 tests:

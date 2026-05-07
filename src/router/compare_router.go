@@ -22,6 +22,9 @@ func CompareRoutes(app *fiber.App, db *gorm.DB) {
 
 	// Compare API Group (with file validation middleware)
 	api := app.Group("/api/v1/compare")
+	api.Get("/test", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"message": "Compare API is working", "status": "ok"})
+	})
 	api.Post("/process", middleware.FileValidation(), compareController.Compare)
 	api.Get("/history", compareController.GetHistory)
 	api.Get("/history/:id", compareController.GetHistoryByID)

@@ -10,40 +10,31 @@ import (
 
 func PortfolioRoutes(app *fiber.App, db *gorm.DB) {
 	pc := controller.NewPortfolioController(db)
-	
-	api := app.Group("/api")
 
-	// Public Routes (for frontend)
-	api.Get("/profile", pc.GetProfile)
-	api.Get("/experience", pc.GetExperiences)
-	api.Get("/achievements", pc.GetAchievements)
-	api.Get("/photos", pc.GetPhotos)
-	api.Get("/videos", pc.GetVideos)
+	// Public Routes (for frontend) - no JWT required
+	app.Get("/api/profile", pc.GetProfile)
+	app.Get("/api/experience", pc.GetExperiences)
+	app.Get("/api/achievements", pc.GetAchievements)
+	app.Get("/api/photos", pc.GetPhotos)
+	app.Get("/api/videos", pc.GetVideos)
 
-	// Protected Routes (for admin)
-	// We use the JwtConfig middleware to protect these routes
-	protected := api.Group("/", middleware.JwtConfig())
-	
-	protected.Post("/profile", pc.UpdateProfile)
-	protected.Post("/experience", pc.AddExperience)
-	protected.Put("/experience/:id", pc.UpdateExperience)
-	protected.Delete("/experience/:id", pc.DeleteExperience)
+	// Protected Routes (for admin) - each route gets JWT middleware individually
+	app.Post("/api/profile", middleware.JwtConfig(), pc.UpdateProfile)
+	app.Post("/api/experience", middleware.JwtConfig(), pc.AddExperience)
+	app.Put("/api/experience/:id", middleware.JwtConfig(), pc.UpdateExperience)
+	app.Delete("/api/experience/:id", middleware.JwtConfig(), pc.DeleteExperience)
 
 	// Achievement Routes
-	protected.Post("/achievements", pc.AddAchievement)
-	protected.Put("/achievements/:id", pc.UpdateAchievement)
-	protected.Delete("/achievements/:id", pc.DeleteAchievement)
+	app.Post("/api/achievements", middleware.JwtConfig(), pc.AddAchievement)
+	app.Put("/api/achievements/:id", middleware.JwtConfig(), pc.UpdateAchievement)
+	app.Delete("/api/achievements/:id", middleware.JwtConfig(), pc.DeleteAchievement)
 
 	// Photo Routes
-	protected.Post("/photos", pc.AddPhoto)
-	protected.Delete("/photos/:id", pc.DeletePhoto)
+	app.Post("/api/photos", middleware.JwtConfig(), pc.AddPhoto)
+	app.Delete("/api/photos/:id", middleware.JwtConfig(), pc.DeletePhoto)
 
 	// Video Routes
-	protected.Post("/videos", pc.AddVideo)
-	protected.Put("/videos/:id", pc.UpdateVideo)
-	protected.Delete("/videos/:id", pc.DeleteVideo)
-	
-	// Image Upload (if needed, adding it to protected group)
-	// protected.Post("/upload-image", pc.UploadImage)
+	app.Post("/api/videos", middleware.JwtConfig(), pc.AddVideo)
+	app.Put("/api/videos/:id", middleware.JwtConfig(), pc.UpdateVideo)
+	app.Delete("/api/videos/:id", middleware.JwtConfig(), pc.DeleteVideo)
 }
-
